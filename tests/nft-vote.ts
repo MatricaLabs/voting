@@ -2,9 +2,7 @@ import * as anchor from "@project-serum/anchor";
 import { Program } from "@project-serum/anchor";
 import assert from "assert";
 import { NftVote } from "../target/types/nft_vote";
-import { createMint, createMintAndVault } from "@project-serum/common";
-
-anchor.utils.features.set("anchor-deprecated-state");
+import { createMintAndVault } from "@project-serum/common";
 
 describe("nft-vote", () => {
   const provider = anchor.Provider.env();
