@@ -10,21 +10,6 @@ describe("nft-vote", () => {
 
   const program = anchor.workspace.NftVote as Program<NftVote>;
 
-  // HpWLog4FwZpKcm3qR27iZXN59spcXH497SK4vD9VdwS7
-  const admin = anchor.web3.Keypair.fromSecretKey(
-    Uint8Array.from([
-      31, 225, 56, 138, 123, 153, 16, 149, 61, 0, 3, 14, 95, 81, 153, 119, 129, 9, 132, 112, 241, 138, 177, 2, 158, 41,
-      145, 43, 20, 155, 255, 255, 249, 230, 119, 32, 190, 223, 88, 19, 197, 110, 225, 71, 124, 76, 116, 162, 5, 17, 8,
-      54, 156, 246, 122, 186, 159, 44, 225, 233, 253, 179, 118, 40,
-    ])
-  );
-
-  before(async () => {
-    await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(admin.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL)
-    );
-  });
-
   it("propose", async () => {
     const proposer = anchor.web3.Keypair.generate();
     await provider.connection.confirmTransaction(
