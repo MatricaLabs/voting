@@ -1,20 +1,11 @@
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, TokenAccount};
-use std::str::FromStr;
+use anchor_spl::token::TokenAccount;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod nft_vote {
     use super::*;
-
-    pub fn add_nft(ctx: Context<AddNFT>, _bump: u8, weight: u8) -> ProgramResult {
-        // init nft info
-        let nft_info = &mut ctx.accounts.nft_info;
-        nft_info.weight = weight;
-
-        Ok(())
-    }
 
     // TODO test for a long long proposal
     pub fn propose(
@@ -28,7 +19,6 @@ pub mod nft_vote {
         proposal.proposer = *ctx.accounts.proposer.key;
         proposal.title = title;
         proposal.content = content;
-        proposal.votes = vec![0; options.len()];
         proposal.options = options;
         proposal.created_at = Clock::get()?.unix_timestamp;
 
@@ -41,23 +31,8 @@ pub mod nft_vote {
         vote_record.option_idx = option_idx;
         vote_record.created_at = Clock::get()?.unix_timestamp;
 
-        // vote
-        let proposal = &mut ctx.accounts.proposal;
-        proposal.votes[option_idx as usize] += ctx.accounts.nft_info.weight as u64;
-
         Ok(())
     }
-}
-
-#[derive(Accounts)]
-#[instruction(bump: u8)]
-pub struct AddNFT<'info> {
-    #[account(mut, address = Pubkey::from_str("HpWLog4FwZpKcm3qR27iZXN59spcXH497SK4vD9VdwS7").unwrap() @ ErrorCode::OnlyAdmin)]
-    pub admin: Signer<'info>,
-    pub mint: Account<'info, Mint>,
-    #[account(init, seeds = [&mint.key().to_bytes()[..]], bump = bump, payer = admin, space = 8 + 1)]
-    pub nft_info: Account<'info, NftInfo>,
-    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
@@ -74,7 +49,6 @@ pub struct Propose<'info> {
             4 + title.len() +
             4 + content.len() +
             4 + options.iter().fold(0, |total, s| total + 4 + s.len()) +
-            4 + (options.len() * 8) +
             8
     )]
     pub proposal: Account<'info, Proposal>,
@@ -88,8 +62,6 @@ pub struct Vote<'info> {
     pub owner: Signer<'info>,
     #[account("&token_account.owner == owner.key", "token_account.amount == 1")]
     pub token_account: Account<'info, TokenAccount>,
-    #[account(address = Pubkey::find_program_address(&[&token_account.mint.to_bytes()], &id()).0)]
-    pub nft_info: Account<'info, NftInfo>,
     #[account(mut, "(option_idx as usize) < proposal.options.len()")]
     pub proposal: Account<'info, Proposal>,
     #[account(
@@ -107,17 +79,11 @@ pub struct Vote<'info> {
 }
 
 #[account]
-pub struct NftInfo {
-    pub weight: u8,
-}
-
-#[account]
 pub struct Proposal {
     pub proposer: Pubkey,
     pub title: String,
     pub content: String,
     pub options: Vec<String>,
-    pub votes: Vec<u64>,
     pub created_at: i64,
 }
 

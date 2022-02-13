@@ -22,30 +22,7 @@ describe("nft-vote", () => {
   before(async () => {
     await provider.connection.confirmTransaction(
       await provider.connection.requestAirdrop(admin.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      "processed"
     );
-  });
-
-  it("init nft", async () => {
-    const mintPubkey = await createMint(provider);
-    const [nftInfoPubkey, nftInfoBump] = await anchor.web3.PublicKey.findProgramAddress(
-      [mintPubkey.toBuffer()],
-      program.programId
-    );
-    const weight = 1;
-
-    await program.rpc.addNft(nftInfoBump, weight, {
-      accounts: {
-        admin: admin.publicKey,
-        mint: mintPubkey,
-        nftInfo: nftInfoPubkey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      },
-      signers: [admin],
-    });
-
-    const nftInfo = await program.account.nftInfo.fetch(nftInfoPubkey);
-    assert.ok(nftInfo.weight === weight);
   });
 
   it("propose", async () => {
@@ -75,7 +52,6 @@ describe("nft-vote", () => {
     assert.equal(proposalAccountInfo.title, title);
     assert.equal(proposalAccountInfo.content, content);
     assert.deepEqual(proposalAccountInfo.options, options);
-    assert.deepEqual(proposalAccountInfo.votes, Array(options.length).fill(new anchor.BN(Array(8).fill(0), "le")));
     assert.ok(proposalAccountInfo.createdAt > new anchor.BN(0));
     assert.ok(
       proposalAccountInfo.createdAt <= timeAfterProposing,
@@ -89,21 +65,6 @@ describe("nft-vote", () => {
       await provider.connection.requestAirdrop(owner.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
       "processed"
     );
-    const [mintPubkey, tokenAccount] = await createMintAndVault(provider, new anchor.BN(1), owner.publicKey, 0);
-    const [nftInfoPubkey, nftInfoBump] = await anchor.web3.PublicKey.findProgramAddress(
-      [mintPubkey.toBuffer()],
-      program.programId
-    );
-    const weight = 1;
-    await program.rpc.addNft(nftInfoBump, weight, {
-      accounts: {
-        admin: admin.publicKey,
-        mint: mintPubkey,
-        nftInfo: nftInfoPubkey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      },
-      signers: [admin],
-    });
 
     const proposer = anchor.web3.Keypair.generate();
     await provider.connection.confirmTransaction(
@@ -123,6 +84,7 @@ describe("nft-vote", () => {
       signers: [proposer, proposal],
     });
 
+    const [mintPubkey, tokenAccount] = await createMintAndVault(provider, new anchor.BN(1), owner.publicKey, 0);
     const [voteRecordPubkey, voteRecordBump] = await anchor.web3.PublicKey.findProgramAddress(
       [mintPubkey.toBuffer(), proposal.publicKey.toBuffer()],
       program.programId
@@ -132,7 +94,6 @@ describe("nft-vote", () => {
       accounts: {
         owner: owner.publicKey,
         tokenAccount: tokenAccount,
-        nftInfo: nftInfoPubkey,
         proposal: proposal.publicKey,
         voteRecord: voteRecordPubkey,
         systemProgram: anchor.web3.SystemProgram.programId,
@@ -146,10 +107,6 @@ describe("nft-vote", () => {
     assert.equal(proposalAccountInfo.title, title);
     assert.equal(proposalAccountInfo.content, content);
     assert.deepEqual(proposalAccountInfo.options, options);
-    assert.deepEqual(proposalAccountInfo.votes, [
-      new anchor.BN(Array(8).fill(0), "le"),
-      new anchor.BN([1, 0, 0, 0, 0, 0, 0, 0], "le"),
-    ]);
     assert.ok(proposalAccountInfo.createdAt > new anchor.BN(0));
 
     const voteRecord = await program.account.voteRecord.fetch(voteRecordPubkey);
