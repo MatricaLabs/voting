@@ -15,6 +15,7 @@ pub mod nft_vote {
         title: String,
         content: String,
         options: Vec<String>,
+        ended_at: i64,
     ) -> ProgramResult {
         // check title length
         if title.len() > MAX_TITLE_LEN {
@@ -27,18 +28,27 @@ pub mod nft_vote {
         proposal.title = title;
         proposal.content = content;
         proposal.options = options;
+        proposal.ended_at = ended_at;
         proposal.created_at = Clock::get()?.unix_timestamp;
 
         Ok(())
     }
 
     pub fn vote(ctx: Context<Vote>, _bump: u8, option_idx: u8) -> ProgramResult {
+        let now = Clock::get()?.unix_timestamp;
+
+        // check is a valid voting time
+        require!(
+            ctx.accounts.proposal.ended_at >= now,
+            ErrorCode::ProposalVotingHasClosed,
+        );
+
         // init vote record
         let vote_record = &mut ctx.accounts.vote_record;
         vote_record.proposal = ctx.accounts.proposal.key();
         vote_record.mint = ctx.accounts.token_account.mint;
         vote_record.option_idx = option_idx;
-        vote_record.created_at = Clock::get()?.unix_timestamp;
+        vote_record.created_at = now;
 
         Ok(())
     }
@@ -58,6 +68,7 @@ pub struct Propose<'info> {
             4 + MAX_TITLE_LEN +
             4 + content.len() +
             4 + options.iter().fold(0, |total, s| total + 4 + s.len()) +
+            8 +
             8
     )]
     pub proposal: Account<'info, Proposal>,
@@ -90,6 +101,7 @@ pub struct Proposal {
     pub title: String,
     pub content: String,
     pub options: Vec<String>,
+    pub ended_at: i64,
     pub created_at: i64,
 }
 
@@ -105,4 +117,6 @@ pub struct VoteRecord {
 pub enum ErrorCode {
     #[msg("title should less than or equals to 100")]
     TitleTooLong,
+    #[msg("proposal voting has closed")]
+    ProposalVotingHasClosed,
 }

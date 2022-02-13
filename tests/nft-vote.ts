@@ -4,6 +4,8 @@ import assert from "assert";
 import { NftVote } from "../target/types/nft_vote";
 import { createMint, createMintAndVault } from "@project-serum/common";
 
+anchor.utils.features.set("anchor-deprecated-state");
+
 describe("nft-vote", () => {
   const provider = anchor.Provider.env();
   anchor.setProvider(provider);
@@ -22,14 +24,15 @@ describe("nft-vote", () => {
       const title = "test title?";
       const content = "this is line1\nthis line 2";
       const options = ["option1", "option2"];
+      const endedAt = new anchor.BN(new Date().getTime() / 1000 - 86400);
 
-      await program.rpc.propose(title, content, options, {
-        accounts: {
-          proposer: proposer.publicKey,
-          proposal: proposal.publicKey,
-          systemProgram: anchor.web3.SystemProgram.programId,
-        },
-        signers: [proposer, proposal],
+      await propose({
+        proposer: proposer,
+        proposal: proposal,
+        title: title,
+        content: content,
+        options: options,
+        endedAt: endedAt,
       });
       let timeAfterProposing = new anchor.BN(new Date().getTime() / 1000);
 
@@ -46,90 +49,120 @@ describe("nft-vote", () => {
     });
 
     it("a proposal which title is too long", async () => {
-      const proposer = anchor.web3.Keypair.generate();
-      await provider.connection.confirmTransaction(
-        await provider.connection.requestAirdrop(proposer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-        "processed"
-      );
-
-      const proposal = anchor.web3.Keypair.generate();
-      const title = "title";
-      const content = "this is line1\nthis line 2";
-      const options = ["option1", "option2"];
-
       try {
-        await program.rpc.propose(`${title.repeat(20) + "!"}`, content, options, {
-          accounts: {
-            proposer: proposer.publicKey,
-            proposal: proposal.publicKey,
-            systemProgram: anchor.web3.SystemProgram.programId,
-          },
-          signers: [proposer, proposal],
+        await propose({
+          title: `${"a too long title".repeat(20) + "!"}`,
         });
+        assert.ok(false);
       } catch (err) {
         assert.equal(err.toString(), "title should less than or equals to 100");
       }
     });
   });
 
-  it("vote", async () => {
-    const owner = anchor.web3.Keypair.generate();
-    await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(owner.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      "processed"
-    );
+  describe("vote", () => {
+    it("a normal vote", async () => {
+      const proposalPubkey = await propose();
 
-    const proposer = anchor.web3.Keypair.generate();
-    await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(proposer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      "processed"
-    );
-    const proposal = anchor.web3.Keypair.generate();
-    const title = "test title?";
-    const content = "this is line1\nthis line 2";
-    const options = ["option1", "option2"];
-    await program.rpc.propose(title, content, options, {
-      accounts: {
-        proposer: proposer.publicKey,
-        proposal: proposal.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      },
-      signers: [proposer, proposal],
+      const optionIdx = 1;
+      const { mintPubkey, voteRecordPubkey } = await vote(proposalPubkey, optionIdx);
+      const timeAfterVoting = new anchor.BN(new Date().getTime() / 1000);
+
+      const voteRecord = await program.account.voteRecord.fetch(voteRecordPubkey);
+      assert.equal(voteRecord.proposal.toBase58(), proposalPubkey.toBase58());
+      assert.equal(voteRecord.mint.toBase58(), mintPubkey.toBase58());
+      assert.equal(voteRecord.optionIdx, optionIdx);
+      assert.ok(voteRecord.createdAt > new anchor.BN(0));
+      assert.ok(
+        voteRecord.createdAt <= timeAfterVoting,
+        `createdAt: ${voteRecord.createdAt}, timeAfterVoting: ${timeAfterVoting}`
+      );
     });
 
-    const [mintPubkey, tokenAccount] = await createMintAndVault(provider, new anchor.BN(1), owner.publicKey, 0);
+    it("vote to a closed proposal", async () => {
+      const proposalPubkey = await propose({ endedAt: new anchor.BN(new Date().getTime() / 1000 - 86400) });
+
+      try {
+        await vote(proposalPubkey, 1);
+        assert.ok(false);
+      } catch (err) {
+        assert.equal(err.toString(), "proposal voting has closed");
+      }
+    });
+  });
+
+  const vote = async (
+    proposal: anchor.web3.PublicKey,
+    optionIdx: number,
+    param?: {
+      owner: anchor.web3.Keypair;
+      mint: anchor.web3.PublicKey;
+      tokenAccount: anchor.web3.PublicKey;
+    }
+  ): Promise<{ voteRecordPubkey: anchor.web3.PublicKey; mintPubkey: anchor.web3.PublicKey }> => {
+    // prepare param
+    if (!param) {
+      const owner = anchor.web3.Keypair.generate();
+      await provider.connection.confirmTransaction(
+        await provider.connection.requestAirdrop(owner.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
+        "processed"
+      );
+      const [mintPubkey, tokenAccount] = await createMintAndVault(provider, new anchor.BN(1), owner.publicKey, 0);
+      param = { owner: owner, mint: mintPubkey, tokenAccount: tokenAccount };
+    }
+
     const [voteRecordPubkey, voteRecordBump] = await anchor.web3.PublicKey.findProgramAddress(
-      [mintPubkey.toBuffer(), proposal.publicKey.toBuffer()],
+      [param.mint.toBuffer(), proposal.toBuffer()],
       program.programId
     );
-    const optionIdx = 1;
     await program.rpc.vote(voteRecordBump, optionIdx, {
       accounts: {
-        owner: owner.publicKey,
-        tokenAccount: tokenAccount,
-        proposal: proposal.publicKey,
+        owner: param.owner.publicKey,
+        tokenAccount: param.tokenAccount,
+        proposal: proposal,
         voteRecord: voteRecordPubkey,
         systemProgram: anchor.web3.SystemProgram.programId,
       },
-      signers: [owner],
+      signers: [param.owner],
     });
-    const timeAfterVoting = new anchor.BN(new Date().getTime() / 1000);
 
-    const proposalAccountInfo = await program.account.proposal.fetch(proposal.publicKey);
-    assert.equal(proposalAccountInfo.proposer.toBase58(), proposer.publicKey.toBase58());
-    assert.equal(proposalAccountInfo.title, title);
-    assert.equal(proposalAccountInfo.content, content);
-    assert.deepEqual(proposalAccountInfo.options, options);
-    assert.ok(proposalAccountInfo.createdAt > new anchor.BN(0));
+    return { voteRecordPubkey: voteRecordPubkey, mintPubkey: param.mint };
+  };
 
-    const voteRecord = await program.account.voteRecord.fetch(voteRecordPubkey);
-    assert.equal(voteRecord.proposal.toBase58(), proposal.publicKey.toBase58());
-    assert.equal(voteRecord.mint.toBase58(), mintPubkey.toBase58());
-    assert.equal(voteRecord.optionIdx, optionIdx);
-    assert.ok(voteRecord.createdAt > new anchor.BN(0));
-    assert.ok(
-      voteRecord.createdAt <= timeAfterVoting,
-      `createdAt: ${voteRecord.createdAt}, timeAfterVoting: ${timeAfterVoting}`
-    );
-  });
+  const propose = async (param?: {
+    proposer?: anchor.web3.Keypair;
+    proposal?: anchor.web3.Keypair;
+    title?: string;
+    content?: string;
+    options?: Array<string>;
+    endedAt?: anchor.BN;
+  }): Promise<anchor.web3.PublicKey> => {
+    // prepare param
+    param = param || {};
+    if (!param.proposer) {
+      param.proposer = anchor.web3.Keypair.generate();
+      await provider.connection.confirmTransaction(
+        await provider.connection.requestAirdrop(param.proposer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
+        "processed"
+      );
+    }
+    param.proposal = param.proposal || anchor.web3.Keypair.generate();
+    param.title = param.title || "test title?";
+    param.content = param.content || "this is line1\nthis line 2";
+    param.options = param.options || ["options1", "options2"];
+    param.endedAt = param.endedAt || new anchor.BN(new Date().getTime() / 1000 + 86400);
+
+    // propose
+    await program.rpc.propose(param.title, param.content, param.options, param.endedAt, {
+      accounts: {
+        proposer: param.proposer.publicKey,
+        proposal: param.proposal.publicKey,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      },
+      signers: [param.proposer, param.proposal],
+    });
+
+    // return the proposal key
+    return param.proposal.publicKey;
+  };
 });
