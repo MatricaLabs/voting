@@ -28,6 +28,8 @@ pub mod nft_vote {
     pub fn vote(ctx: Context<Vote>, _bump: u8, option_idx: u8) -> ProgramResult {
         // init vote record
         let vote_record = &mut ctx.accounts.vote_record;
+        vote_record.proposal = ctx.accounts.proposal.key();
+        vote_record.mint = ctx.accounts.token_account.mint;
         vote_record.option_idx = option_idx;
         vote_record.created_at = Clock::get()?.unix_timestamp;
 
@@ -69,10 +71,7 @@ pub struct Vote<'info> {
         seeds = [&token_account.mint.to_bytes()[..], &proposal.key().to_bytes()[..]],
         bump = bump,
         payer = owner,
-        space =
-            8 +
-            1 +
-            8
+        space = 8 + 32 + 32 + 1 + 8
     )]
     pub vote_record: Account<'info, VoteRecord>,
     pub system_program: Program<'info, System>,
@@ -89,6 +88,8 @@ pub struct Proposal {
 
 #[account]
 pub struct VoteRecord {
+    pub proposal: Pubkey,
+    pub mint: Pubkey,
     pub option_idx: u8,
     pub created_at: i64,
 }

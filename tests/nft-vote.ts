@@ -21,7 +21,7 @@ describe("nft-vote", () => {
 
   before(async () => {
     await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(admin.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
+      await provider.connection.requestAirdrop(admin.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL)
     );
   });
 
@@ -110,6 +110,8 @@ describe("nft-vote", () => {
     assert.ok(proposalAccountInfo.createdAt > new anchor.BN(0));
 
     const voteRecord = await program.account.voteRecord.fetch(voteRecordPubkey);
+    assert.equal(voteRecord.proposal.toBase58(), proposal.publicKey.toBase58());
+    assert.equal(voteRecord.mint.toBase58(), mintPubkey.toBase58());
     assert.equal(voteRecord.optionIdx, optionIdx);
     assert.ok(voteRecord.createdAt > new anchor.BN(0));
     assert.ok(
