@@ -103,8 +103,6 @@ pub struct VoteRecord {
 
 #[error]
 pub enum ErrorCode {
-    #[msg("only admin")]
-    OnlyAdmin,
     #[msg("title should less than or equals to 100")]
     TitleTooLong,
 }
