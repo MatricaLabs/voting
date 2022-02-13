@@ -76,7 +76,7 @@ pub struct Vote<'info> {
     #[account(
         init,
         seeds = [&token_account.mint.to_bytes()[..], &proposal.key().to_bytes()[..]],
-        bump = bump,
+        bump,
         payer = owner,
         space = 8 + 32 + 32 + 1 + 8
     )]
