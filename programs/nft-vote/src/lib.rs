@@ -3,6 +3,8 @@ use anchor_spl::token::TokenAccount;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
+const MAX_TITLE_LEN: usize = 100;
+
 #[program]
 pub mod nft_vote {
     use super::*;
@@ -14,6 +16,11 @@ pub mod nft_vote {
         content: String,
         options: Vec<String>,
     ) -> ProgramResult {
+        // check title length
+        if title.len() > MAX_TITLE_LEN {
+            return Err(ErrorCode::TitleTooLong.into());
+        }
+
         // init proposal
         let proposal = &mut ctx.accounts.proposal;
         proposal.proposer = *ctx.accounts.proposer.key;
@@ -48,7 +55,7 @@ pub struct Propose<'info> {
         space =
             8 +
             32 +
-            4 + title.len() +
+            4 + MAX_TITLE_LEN +
             4 + content.len() +
             4 + options.iter().fold(0, |total, s| total + 4 + s.len()) +
             8
@@ -98,4 +105,6 @@ pub struct VoteRecord {
 pub enum ErrorCode {
     #[msg("only admin")]
     OnlyAdmin,
+    #[msg("title should less than or equals to 100")]
+    TitleTooLong,
 }

@@ -10,38 +10,66 @@ describe("nft-vote", () => {
 
   const program = anchor.workspace.NftVote as Program<NftVote>;
 
-  it("propose", async () => {
-    const proposer = anchor.web3.Keypair.generate();
-    await provider.connection.confirmTransaction(
-      await provider.connection.requestAirdrop(proposer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
-      "processed"
-    );
+  describe("propose", () => {
+    it("a normal proposal", async () => {
+      const proposer = anchor.web3.Keypair.generate();
+      await provider.connection.confirmTransaction(
+        await provider.connection.requestAirdrop(proposer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
+        "processed"
+      );
 
-    const proposal = anchor.web3.Keypair.generate();
-    const title = "test title?";
-    const content = "this is line1\nthis line 2";
-    const options = ["option1", "option2"];
+      const proposal = anchor.web3.Keypair.generate();
+      const title = "test title?";
+      const content = "this is line1\nthis line 2";
+      const options = ["option1", "option2"];
 
-    await program.rpc.propose(title, content, options, {
-      accounts: {
-        proposer: proposer.publicKey,
-        proposal: proposal.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      },
-      signers: [proposer, proposal],
+      await program.rpc.propose(title, content, options, {
+        accounts: {
+          proposer: proposer.publicKey,
+          proposal: proposal.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        },
+        signers: [proposer, proposal],
+      });
+      let timeAfterProposing = new anchor.BN(new Date().getTime() / 1000);
+
+      const proposalAccountInfo = await program.account.proposal.fetch(proposal.publicKey);
+      assert.equal(proposalAccountInfo.proposer.toBase58(), proposer.publicKey.toBase58());
+      assert.equal(proposalAccountInfo.title, title);
+      assert.equal(proposalAccountInfo.content, content);
+      assert.deepEqual(proposalAccountInfo.options, options);
+      assert.ok(proposalAccountInfo.createdAt > new anchor.BN(0));
+      assert.ok(
+        proposalAccountInfo.createdAt <= timeAfterProposing,
+        `createdAt: ${proposalAccountInfo.createdAt}, timeAfterProposing: ${timeAfterProposing}`
+      );
     });
-    let timeAfterProposing = new anchor.BN(new Date().getTime() / 1000);
 
-    const proposalAccountInfo = await program.account.proposal.fetch(proposal.publicKey);
-    assert.equal(proposalAccountInfo.proposer.toBase58(), proposer.publicKey.toBase58());
-    assert.equal(proposalAccountInfo.title, title);
-    assert.equal(proposalAccountInfo.content, content);
-    assert.deepEqual(proposalAccountInfo.options, options);
-    assert.ok(proposalAccountInfo.createdAt > new anchor.BN(0));
-    assert.ok(
-      proposalAccountInfo.createdAt <= timeAfterProposing,
-      `createdAt: ${proposalAccountInfo.createdAt}, timeAfterProposing: ${timeAfterProposing}`
-    );
+    it("a proposal which title is too long", async () => {
+      const proposer = anchor.web3.Keypair.generate();
+      await provider.connection.confirmTransaction(
+        await provider.connection.requestAirdrop(proposer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
+        "processed"
+      );
+
+      const proposal = anchor.web3.Keypair.generate();
+      const title = "title";
+      const content = "this is line1\nthis line 2";
+      const options = ["option1", "option2"];
+
+      try {
+        await program.rpc.propose(`${title.repeat(20) + "!"}`, content, options, {
+          accounts: {
+            proposer: proposer.publicKey,
+            proposal: proposal.publicKey,
+            systemProgram: anchor.web3.SystemProgram.programId,
+          },
+          signers: [proposer, proposal],
+        });
+      } catch (err) {
+        assert.equal(err.toString(), "title should less than or equals to 100");
+      }
+    });
   });
 
   it("vote", async () => {
