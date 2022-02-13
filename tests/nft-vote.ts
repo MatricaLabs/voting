@@ -79,6 +79,25 @@ describe("nft-vote", () => {
       );
     });
 
+    it("use same mint to vote twice", async () => {
+      const proposalPubkey = await propose();
+
+      const owner = anchor.web3.Keypair.generate();
+      await provider.connection.confirmTransaction(
+        await provider.connection.requestAirdrop(owner.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL),
+        "processed"
+      );
+      const [mintPubkey, tokenAccount] = await createMintAndVault(provider, new anchor.BN(1), owner.publicKey, 0);
+
+      try {
+        await vote(proposalPubkey, 1, { owner: owner, mint: mintPubkey, tokenAccount: tokenAccount });
+        await vote(proposalPubkey, 1, { owner: owner, mint: mintPubkey, tokenAccount: tokenAccount });
+        assert.ok(false);
+      } catch (err) {
+        //TODO check error
+      }
+    });
+
     it("vote to a closed proposal", async () => {
       const proposalPubkey = await propose({ endedAt: new anchor.BN(new Date().getTime() / 1000 - 86400) });
 
