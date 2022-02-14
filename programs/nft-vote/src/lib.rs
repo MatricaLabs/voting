@@ -1,7 +1,7 @@
 use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 
-declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
+declare_id!("9rJ3xEnJhff2oJgqXzdrHFshgS5QA1PkNFQp4e1vwzp6");
 
 const MAX_TITLE_LEN: usize = 100;
 
