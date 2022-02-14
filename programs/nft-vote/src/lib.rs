@@ -34,7 +34,7 @@ pub mod nft_vote {
         Ok(())
     }
 
-    pub fn vote(ctx: Context<Vote>, _bump: u8, option_idx: u8) -> ProgramResult {
+    pub fn vote(ctx: Context<Vote>, option_idx: u8) -> ProgramResult {
         let now = Clock::get()?.unix_timestamp;
 
         // check is a valid voting time
@@ -76,7 +76,7 @@ pub struct Propose<'info> {
 }
 
 #[derive(Accounts)]
-#[instruction(bump: u8, option_idx: u8)]
+#[instruction(option_idx: u8)]
 pub struct Vote<'info> {
     #[account(mut)]
     pub owner: Signer<'info>,

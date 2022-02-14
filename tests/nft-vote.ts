@@ -128,11 +128,11 @@ describe("nft-vote", () => {
       param = { owner: owner, mint: mintPubkey, tokenAccount: tokenAccount };
     }
 
-    const [voteRecordPubkey, voteRecordBump] = await anchor.web3.PublicKey.findProgramAddress(
+    const [voteRecordPubkey] = await anchor.web3.PublicKey.findProgramAddress(
       [param.mint.toBuffer(), proposal.toBuffer()],
       program.programId
     );
-    await program.rpc.vote(voteRecordBump, optionIdx, {
+    await program.rpc.vote(optionIdx, {
       accounts: {
         owner: param.owner.publicKey,
         tokenAccount: param.tokenAccount,
