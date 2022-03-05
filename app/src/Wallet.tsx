@@ -13,9 +13,9 @@ import {
 import { WalletModalProvider, WalletDisconnectButton, WalletMultiButton } from "@solana/wallet-adapter-react-ui";
 import { clusterApiUrl } from "@solana/web3.js";
 
-import { Mint } from "./Mint";
-import { Proposal } from "./Proposal";
-import { Vote } from "./Vote";
+import { Mint } from "./mint";
+import { Proposal } from "./proposal";
+import { Vote } from "./vote";
 
 // Default styles that can be overridden by your app
 require("@solana/wallet-adapter-react-ui/styles.css");

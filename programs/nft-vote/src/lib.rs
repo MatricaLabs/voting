@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 use anchor_spl::token::TokenAccount;
 use mpl_token_metadata::{pda::find_metadata_account, state::Metadata};
 
-declare_id!("9rJ3xEnJhff2oJgqXzdrHFshgS5QA1PkNFQp4e1vwzp6");
+declare_id!("yJ28bokcTwpT1orZ8yUGPrwYboV46KDDPituAGD7PGe");
 
 const MAX_TITLE_LEN: usize = 100;
 

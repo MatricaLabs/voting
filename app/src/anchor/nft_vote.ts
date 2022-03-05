@@ -37,6 +37,12 @@ export type NftVote = {
           }
         },
         {
+          "name": "allowedCreators",
+          "type": {
+            "vec": "publicKey"
+          }
+        },
+        {
           "name": "endedAt",
           "type": "i64"
         }
@@ -52,6 +58,11 @@ export type NftVote = {
         },
         {
           "name": "tokenAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "metadata",
           "isMut": false,
           "isSigner": false
         },
@@ -104,6 +115,12 @@ export type NftVote = {
             }
           },
           {
+            "name": "allowedCreators",
+            "type": {
+              "vec": "publicKey"
+            }
+          },
+          {
             "name": "endedAt",
             "type": "i64"
           },
@@ -149,8 +166,16 @@ export type NftVote = {
       "code": 6001,
       "name": "ProposalVotingHasClosed",
       "msg": "proposal voting has closed"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidMint",
+      "msg": "invalid mint"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "yJ28bokcTwpT1orZ8yUGPrwYboV46KDDPituAGD7PGe"
+  },
 };
 
 export const IDL: NftVote = {
@@ -192,6 +217,12 @@ export const IDL: NftVote = {
           }
         },
         {
+          "name": "allowedCreators",
+          "type": {
+            "vec": "publicKey"
+          }
+        },
+        {
           "name": "endedAt",
           "type": "i64"
         }
@@ -207,6 +238,11 @@ export const IDL: NftVote = {
         },
         {
           "name": "tokenAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "metadata",
           "isMut": false,
           "isSigner": false
         },
@@ -259,6 +295,12 @@ export const IDL: NftVote = {
             }
           },
           {
+            "name": "allowedCreators",
+            "type": {
+              "vec": "publicKey"
+            }
+          },
+          {
             "name": "endedAt",
             "type": "i64"
           },
@@ -304,6 +346,14 @@ export const IDL: NftVote = {
       "code": 6001,
       "name": "ProposalVotingHasClosed",
       "msg": "proposal voting has closed"
+    },
+    {
+      "code": 6002,
+      "name": "InvalidMint",
+      "msg": "invalid mint"
     }
-  ]
+  ],
+  "metadata": {
+    "address": "yJ28bokcTwpT1orZ8yUGPrwYboV46KDDPituAGD7PGe",
+  },
 };

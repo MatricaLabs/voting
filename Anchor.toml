@@ -2,10 +2,10 @@
 seeds = false
 
 [programs.localnet]
-nft_vote = "9rJ3xEnJhff2oJgqXzdrHFshgS5QA1PkNFQp4e1vwzp6"
+nft_vote = "yJ28bokcTwpT1orZ8yUGPrwYboV46KDDPituAGD7PGe"
 
 [programs.devnet]
-nft_vote = "9rJ3xEnJhff2oJgqXzdrHFshgS5QA1PkNFQp4e1vwzp6"
+nft_vote = "yJ28bokcTwpT1orZ8yUGPrwYboV46KDDPituAGD7PGe"
 
 [registry]
 url = "https://anchor.projectserum.com"
