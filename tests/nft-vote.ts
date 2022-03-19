@@ -316,6 +316,37 @@ describe("nft-vote", () => {
         assert.equal(err.toString(), "proposal voting has closed");
       }
     });
+
+    it("count how many instructions can pack into single transaction", async () => {
+      const proposalPubkey = await propose();
+      let owner = await newKeypairWithLamports(10 * anchor.web3.LAMPORTS_PER_SOL);
+      const optionIdx = 1;
+
+      let tx = new anchor.web3.Transaction();
+
+      for (let i = 0; i < 8; i++) {
+        let { mintPubkey: mintPubkey, tokenAccountPubkey: tokenAccountPubkey } = await mintNFT(owner);
+
+        const [voteRecordPubkey] = await anchor.web3.PublicKey.findProgramAddress(
+          [mintPubkey.toBuffer(), proposalPubkey.toBuffer()],
+          program.programId
+        );
+
+        tx.add(
+          program.instruction.vote(optionIdx, {
+            accounts: {
+              owner: owner.publicKey,
+              tokenAccount: tokenAccountPubkey,
+              metadata: await Metadata.getPDA(mintPubkey),
+              proposal: proposalPubkey,
+              voteRecord: voteRecordPubkey,
+              systemProgram: anchor.web3.SystemProgram.programId,
+            },
+          })
+        );
+      }
+      await provider.connection.sendTransaction(tx, [owner]);
+    });
   });
 
   const vote = async (
