@@ -8,6 +8,7 @@ export default (() => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
 
+  const [clientIdInput, setClientIdInput] = useState("");
   const [titleInput, setTitleInput] = useState("");
   const [contentInput, setContentInput] = useState("");
   const [optionsInput, setOptionsInput] = useState("");
@@ -21,6 +22,7 @@ export default (() => {
     const program = getProgram(connection, anchorWallet);
 
     try {
+      let clientId = clientIdInput
       let title = titleInput;
       let contect = contentInput;
       let allowedCreators: Array<web3.PublicKey> = [];
@@ -33,7 +35,7 @@ export default (() => {
 
       const proposal = web3.Keypair.generate();
 
-      let tx = await program.transaction.propose(title, contect, options, allowedCreators, endedAt, {
+      let tx = await program.transaction.propose(clientId, title, contect, options, allowedCreators, endedAt, {
         accounts: {
           proposer: anchorWallet.publicKey,
           proposal: proposal.publicKey,
@@ -52,10 +54,26 @@ export default (() => {
     } catch (e) {
       setResult((e as Error).message);
     }
-  }, [connection, anchorWallet, titleInput, contentInput, optionsInput, allowedCreatorsInput, endedAtInput]);
+  }, [
+    connection,
+    anchorWallet,
+    clientIdInput,
+    titleInput,
+    contentInput,
+    optionsInput,
+    allowedCreatorsInput,
+    endedAtInput,
+  ]);
 
   return (
     <div>
+      <input
+        style={{ width: "200px" }}
+        type="text"
+        value={clientIdInput}
+        onChange={(v) => setClientIdInput(v.target.value)}
+        placeholder="client id (u16, 0~65535)"
+      ></input>
       <input
         style={{ width: "200px" }}
         type="text"

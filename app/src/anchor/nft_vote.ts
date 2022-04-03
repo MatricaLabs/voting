@@ -23,6 +23,10 @@ export type NftVote = {
       ],
       "args": [
         {
+          "name": "clientId",
+          "type": "u16"
+        },
+        {
           "name": "title",
           "type": "string"
         },
@@ -96,6 +100,10 @@ export type NftVote = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "clientId",
+            "type": "u16"
+          },
           {
             "name": "proposer",
             "type": "publicKey"
@@ -203,6 +211,10 @@ export const IDL: NftVote = {
       ],
       "args": [
         {
+          "name": "clientId",
+          "type": "u16"
+        },
+        {
           "name": "title",
           "type": "string"
         },
@@ -276,6 +288,10 @@ export const IDL: NftVote = {
       "type": {
         "kind": "struct",
         "fields": [
+          {
+            "name": "clientId",
+            "type": "u16"
+          },
           {
             "name": "proposer",
             "type": "publicKey"

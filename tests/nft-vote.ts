@@ -23,6 +23,7 @@ describe("nft-vote", () => {
         "processed"
       );
 
+      const clientId = 2;
       const proposal = anchor.web3.Keypair.generate();
       const title = "test title?";
       const content = "this is line1\nthis line 2";
@@ -31,6 +32,7 @@ describe("nft-vote", () => {
       const allowedCreators = [];
 
       await propose({
+        clientId: clientId,
         proposer: proposer,
         proposal: proposal,
         title: title,
@@ -41,6 +43,7 @@ describe("nft-vote", () => {
       let timeAfterProposing = new anchor.BN(new Date().getTime() / 1000);
 
       const proposalAccountInfo = await program.account.proposal.fetch(proposal.publicKey);
+      assert.equal(proposalAccountInfo.clientId, clientId);
       assert.equal(proposalAccountInfo.proposer.toBase58(), proposer.publicKey.toBase58());
       assert.equal(proposalAccountInfo.title, title);
       assert.equal(proposalAccountInfo.content, content);
@@ -71,6 +74,7 @@ describe("nft-vote", () => {
         "processed"
       );
 
+      const clientId = 100;
       const proposal = anchor.web3.Keypair.generate();
       const title = "test title?";
       const content = "this is line1\nthis line 2";
@@ -80,6 +84,7 @@ describe("nft-vote", () => {
       const allowedCreators = [randomCreator];
 
       await propose({
+        clientId: clientId,
         proposer: proposer,
         proposal: proposal,
         title: title,
@@ -91,6 +96,7 @@ describe("nft-vote", () => {
       let timeAfterProposing = new anchor.BN(new Date().getTime() / 1000);
 
       const proposalAccountInfo = await program.account.proposal.fetch(proposal.publicKey);
+      assert.equal(proposalAccountInfo.clientId, clientId);
       assert.equal(proposalAccountInfo.proposer.toBase58(), proposer.publicKey.toBase58());
       assert.equal(proposalAccountInfo.title, title);
       assert.equal(proposalAccountInfo.content, content);
@@ -110,6 +116,7 @@ describe("nft-vote", () => {
         "processed"
       );
 
+      const clientId = 1000;
       const proposal = anchor.web3.Keypair.generate();
       const title = "test title?";
       const content = "this is line1\nthis line 2";
@@ -120,6 +127,7 @@ describe("nft-vote", () => {
       const allowedCreators = [randomCreator1, randomCreator2];
 
       await propose({
+        clientId: clientId,
         proposer: proposer,
         proposal: proposal,
         title: title,
@@ -131,6 +139,7 @@ describe("nft-vote", () => {
       let timeAfterProposing = new anchor.BN(new Date().getTime() / 1000);
 
       const proposalAccountInfo = await program.account.proposal.fetch(proposal.publicKey);
+      assert.equal(proposalAccountInfo.clientId, clientId);
       assert.equal(proposalAccountInfo.proposer.toBase58(), proposer.publicKey.toBase58());
       assert.equal(proposalAccountInfo.title, title);
       assert.equal(proposalAccountInfo.content, content);
@@ -379,6 +388,7 @@ describe("nft-vote", () => {
   };
 
   const propose = async (param?: {
+    clientId?: number;
     proposer?: anchor.web3.Keypair;
     proposal?: anchor.web3.Keypair;
     title?: string;
@@ -395,6 +405,7 @@ describe("nft-vote", () => {
         await provider.connection.requestAirdrop(param.proposer.publicKey, 10 * anchor.web3.LAMPORTS_PER_SOL)
       );
     }
+    param.clientId = param.clientId || 1;
     param.proposal = param.proposal || anchor.web3.Keypair.generate();
     param.title = param.title || "test title?";
     param.content = param.content || "this is line1\nthis line 2";
@@ -403,14 +414,22 @@ describe("nft-vote", () => {
     param.allowedCreators = param.allowedCreators || [];
 
     // propose
-    await program.rpc.propose(param.title, param.content, param.options, param.allowedCreators, param.endedAt, {
-      accounts: {
-        proposer: param.proposer.publicKey,
-        proposal: param.proposal.publicKey,
-        systemProgram: anchor.web3.SystemProgram.programId,
-      },
-      signers: [param.proposer, param.proposal],
-    });
+    await program.rpc.propose(
+      param.clientId,
+      param.title,
+      param.content,
+      param.options,
+      param.allowedCreators,
+      param.endedAt,
+      {
+        accounts: {
+          proposer: param.proposer.publicKey,
+          proposal: param.proposal.publicKey,
+          systemProgram: anchor.web3.SystemProgram.programId,
+        },
+        signers: [param.proposer, param.proposal],
+      }
+    );
 
     // return the proposal key
     return param.proposal.publicKey;

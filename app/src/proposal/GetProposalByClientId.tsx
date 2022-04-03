@@ -1,46 +1,49 @@
+import { bs58 } from "@project-serum/anchor/dist/cjs/utils/bytes";
 import { WalletNotConnectedError } from "@solana/wallet-adapter-base";
 import { useConnection, useAnchorWallet } from "@solana/wallet-adapter-react";
 import { FC, useCallback, useState } from "react";
-import { web3 } from "@project-serum/anchor";
 import { getProgram } from "../anchor";
 
 export default (() => {
   const { connection } = useConnection();
   const anchorWallet = useAnchorWallet();
 
-  const [proposalAddress, setProposalAddress] = useState("");
+  const [clientIdInput, setClientIdInput] = useState("");
   const [result, setResult] = useState("");
 
   const onClick = useCallback(async () => {
     if (!anchorWallet) throw new WalletNotConnectedError();
-
     const program = getProgram(connection, anchorWallet);
 
     try {
-      if (!anchorWallet) throw new WalletNotConnectedError();
+      let buf = Buffer.alloc(2);
+      buf.writeUInt16LE(parseInt(clientIdInput));
+      console.log(buf)
 
-      try {
-        let proposalPubkey = new web3.PublicKey(proposalAddress);
-        const proposalAccountInfo = await program.account.proposal.fetch(proposalPubkey);
-        setResult(JSON.stringify(proposalAccountInfo, null, 2));
-      } catch (e) {
-        setResult((e as Error).message);
-      }
+      const res = await program.account.proposal.all([
+        {
+          memcmp: {
+            offset: 8,
+            bytes: bs58.encode(buf),
+          },
+        },
+      ]);
+      setResult(JSON.stringify(res, null, 2));
     } catch (e) {
       setResult((e as Error).message);
     }
-  }, [connection, anchorWallet, proposalAddress]);
+  }, [connection, anchorWallet, clientIdInput]);
 
   return (
     <div>
       <input
         style={{ width: "200px" }}
         type="text"
-        value={proposalAddress}
-        onChange={(v) => setProposalAddress(v.target.value)}
-        placeholder="proposal pubkey"
+        value={clientIdInput}
+        onChange={(v) => setClientIdInput(v.target.value)}
+        placeholder="client id"
       ></input>
-      <button onClick={onClick}>Get Proposal By Proposal Key</button>
+      <button onClick={onClick}>Get Proposals By Client Id</button>
       {result ? <p>{result}</p> : <></>}
     </div>
   );

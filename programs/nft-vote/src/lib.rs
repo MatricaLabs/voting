@@ -13,6 +13,7 @@ pub mod nft_vote {
     // TODO test for a long long proposal
     pub fn propose(
         ctx: Context<Propose>,
+        client_id: u16,
         title: String,
         content: String,
         options: Vec<String>,
@@ -26,6 +27,7 @@ pub mod nft_vote {
 
         // init proposal
         let proposal = &mut ctx.accounts.proposal;
+        proposal.client_id = client_id;
         proposal.proposer = *ctx.accounts.proposer.key;
         proposal.title = title;
         proposal.content = content;
@@ -36,6 +38,7 @@ pub mod nft_vote {
 
         Ok(())
     }
+
     pub fn vote(ctx: Context<Vote>, option_idx: u8) -> ProgramResult {
         let now = Clock::get()?.unix_timestamp;
         let proposal = &ctx.accounts.proposal;
@@ -73,7 +76,7 @@ pub mod nft_vote {
 }
 
 #[derive(Accounts)]
-#[instruction(title: String, content: String, options: Vec<String>, allowed_creators: Vec<Pubkey>)]
+#[instruction(client_id: u16, title: String, content: String, options: Vec<String>, allowed_creators: Vec<Pubkey>)]
 pub struct Propose<'info> {
     #[account(mut)]
     pub proposer: Signer<'info>,
@@ -82,6 +85,7 @@ pub struct Propose<'info> {
         payer = proposer,
         space =
             8 +
+            2 +
             32 +
             4 + MAX_TITLE_LEN +
             4 + content.len() +
@@ -118,6 +122,7 @@ pub struct Vote<'info> {
 
 #[account]
 pub struct Proposal {
+    pub client_id: u16,
     pub proposer: Pubkey,
     pub title: String,
     pub content: String,

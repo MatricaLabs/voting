@@ -2,6 +2,7 @@ import { FC } from "react";
 
 import NewProposal from "./NewProposal";
 import GetProposalByPubkey from "./GetProposalByPubkey";
+import GetProposalByClientId from "./GetProposalByClientId";
 import GetAllProposal from "./GetAllProposal";
 
 export const Proposal: FC = () => {
@@ -9,6 +10,7 @@ export const Proposal: FC = () => {
     <div>
       <NewProposal />
       <GetProposalByPubkey />
+      <GetProposalByClientId />
       <GetAllProposal />
     </div>
   );
