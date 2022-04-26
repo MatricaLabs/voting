@@ -54,5 +54,5 @@ The contract will allow votes before the end date, who's metadata has a verified
 The verified creator many not be enough to distinguish an NFT's collection, even when combined with `updateAuthority`. The brute force method of writing the entire token list to the chain makes creating a contract prohibitively expensive. Ultimately we believe the client application can filter votes off-chain.*
 
 ## Votes per transaction
-Currently maximum is 7 NFT votes per transaction, though we hope to increase this in the future. 
+Current maximum is 7 NFT votes per transaction, though we hope to increase this in the future. 
 
