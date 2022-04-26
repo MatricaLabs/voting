@@ -48,7 +48,7 @@ https://github.com/MatricaLabs/voting/blob/11ebe037cd6282ae39b116081cda90ad1db49
 
 ## Token-gating
 
-The contract will allow votes between the start and end date, who's metadata has a verified creator in the allowedCreators list.
+The contract will allow votes before the end date, who's metadata has a verified creator in the allowedCreators list.
 
 *Note: 
 The verified creator many not be enough to distinguish an NFT's collection, even when combined with `updateAuthority`. The brute force method of writing the entire token list to the chain makes creating a contract prohibitively expensive. Ultimately we believe the client application can filter votes off-chain.*
